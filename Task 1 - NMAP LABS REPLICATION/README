@@ -7,3 +7,14 @@ performed on Kali Linux using Nmap 7.95 on 7 May 2026, targeting localhost
 (127.0.0.1), the local 10.0.2.0/24 subnet, and the authorised external
 target scanme.nmap.org.
 
+## Environment
+| Component | Details |
+|-----------|---------|
+| Attacker OS | Kali Linux (root@kali) |
+| Nmap Version | 7.95 |
+| Local IP | 10.0.2.15 (eth0) |
+| Subnet Scanned | 10.0.2.0/24 |
+| External Target | scanme.nmap.org (45.33.32.156) |
+| Date | 7 May 2026 |
+
+---
