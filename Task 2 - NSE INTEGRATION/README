@@ -1,0 +1,154 @@
+# Task 2: Nmap Scripting Engine (NSE) Integration
+
+## Overview
+This folder documents the use of the Nmap Scripting Engine (NSE) to extend
+basic port scanning into active service enumeration and vulnerability
+detection. NSE uses Lua scripts organised into categories. All scripts were
+run on Kali Linux against localhost and the Metasploitable 2 target
+(192.168.56.101).
+
+---
+
+## Environment
+| Component | Details |
+|-----------|---------|
+| Attacker OS | Kali Linux |
+| Nmap Version | 7.95 |
+| Local Test Target | 127.0.0.1 |
+| Live Target | 192.168.56.101 (Metasploitable 2) |
+| Date | 7–8 May 2026 |
+
+---
+
+## Scripts Covered
+
+### 1. Default Scripts — `-sC`
+Runs a curated set of safe, informative scripts based on detected services.
+```bash
+nmap -sC 127.0.0.1
+nmap -sC -sV 127.0.0.1
+```
+**What it does:** Activates scripts such as `ssh-hostkey`, `http-title`,
+`ssl-cert`, and `smtp-commands` automatically.
+**Result:** No output on localhost (no services). On scanme.nmap.org,
+ssh-hostkey returned all 4 SSH key fingerprints.
+**Security implication:** Default scripts collect significant intelligence
+automatically — SSH key fingerprints can track server identity over time.
+
+---
+
+### 2. Vulnerability Detection — `--script vuln`
+Checks for known CVEs across all detected services.
+```bash
+nmap --script vuln 127.0.0.1
+```
+**What it does:** Runs scripts like `http-shellshock`, `smb-vuln-ms17-010`,
+`ssl-poodle`, `http-csrf`, and many more.
+**Result:** No vulnerabilities found (no services on localhost).
+Scan took 10.25–10.38 seconds.
+**Security implication:** On a live server, this returns specific CVE IDs.
+Must only be run against authorised targets.
+
+---
+
+### 3. FTP Backdoor Check — `ftp-vsftpd-backdoor`
+Checks if the target FTP server is the trojanised vsftpd 2.3.4 build.
+```bash
+nmap --script ftp-vsftpd-backdoor 127.0.0.1
+nmap --script ftp-vsftpd-backdoor -p 21 192.168.56.101
+```
+**What it does:** Sends a crafted ":)" login to trigger the backdoor
+and checks if port 6200 opens.
+**Result (localhost):** Port 21 closed — no result.
+**Result (192.168.56.101):** Port 21 open — backdoor confirmed active.
+Scan took 34.33 seconds.
+**Security implication:** CVSSv3 score 9.8 (Critical). Full root access
+in seconds. Exploited in Task 3.
+
+---
+
+### 4. FTP Anonymous Login — `ftp-anon`
+Checks if the FTP server allows unauthenticated anonymous access.
+```bash
+nmap --script ftp-anon -p 21 127.0.0.1
+```
+> ⚠️ **Error encountered:** Running without `-p 21` caused:
+> `Error #487: Your port specifications are illegal. QUITTING!`
+> Fixed by adding `-p 21` explicitly.
+
+**Result:** Port 21 closed on localhost. On Metasploitable, the full
+Nmap scan confirmed anonymous FTP login allowed (FTP code 230).
+**Security implication:** Anonymous FTP exposes files to any unauthenticated
+user and can allow unauthorised file uploads.
+
+---
+
+### 5. SSH Algorithm Enumeration — `ssh2-enum-algos`
+Lists all cryptographic algorithms supported by an SSH server.
+```bash
+nmap --script ssh2-enum-algos -p 22 127.0.0.1
+```
+**Result:** Port 22 closed on localhost. Metasploitable's OpenSSH 4.7p1
+(found in Task 3) supports SSLv2-era ciphers — considered broken.
+**Security implication:** Weak algorithms like `diffie-hellman-group1-sha1`
+and RC4 are cryptographically broken and should be disabled.
+
+---
+
+### 6. HTTP Directory Enumeration — `http-enum`
+Brute-forces common web paths to find hidden directories and admin panels.
+```bash
+nmap --script http-enum 127.0.0.1
+nmap --script http-enum -p 80 127.0.0.1
+```
+**Result:** Port 80 closed on localhost. Metasploitable runs Apache 2.2.8
+on port 80 — a valid target in a live engagement.
+**Security implication:** Finds phpMyAdmin, Tomcat /manager, DVWA, and
+similar interfaces that ship with default credentials.
+
+---
+
+### 7. SMB Vulnerability — `smb-vuln-ms17-010`
+Detects EternalBlue — the vulnerability behind the 2017 WannaCry attack.
+```bash
+nmap --script smb-vuln-ms17-010 -p 445 127.0.0.1
+```
+**What it does:** Sends a crafted SMBv1 packet and checks if the server
+is vulnerable to MS17-010 remote code execution.
+**Result:** Port 445 closed on localhost. In the Task 1 subnet scan,
+10.0.2.2 had port 445 open with SMB signing enabled.
+**Security implication:** Unpatched Windows + SMBv1 + port 445 reachable
+= complete remote compromise. Patch MS17-010 and disable SMBv1.
+
+---
+
+## NSE Categories Reference
+| Category | Purpose |
+|----------|---------|
+| `default` | Safe, informative — runs with `-sC` |
+| `safe` | Will not crash services |
+| `vuln` | Checks for known CVEs |
+| `auth` | Tests authentication weaknesses |
+| `brute` | Brute-force credential attacks |
+| `discovery` | Gathers extra network information |
+| `intrusive` | May crash or affect target |
+| `exploit` | Actively attempts exploitation |
+
+---
+
+## Key Takeaways
+- NSE transforms Nmap from a port scanner into a full vulnerability scanner.
+- Always combine `--script` with `-sV` so Nmap selects the most relevant
+  scripts based on detected service versions.
+- The `ftp-vsftpd-backdoor` script identified the exact vulnerability
+  exploited in Task 3 before any manual exploitation was attempted.
+- Running NSE vuln scripts takes significantly longer (10+ seconds) due to
+  the number of checks performed.
+
+---
+
+## Files in This Folder
+| File | Description |
+|------|-------------|
+| `Task2_NSE_Integration.docx` | Full report with screenshots and analysis |
+| `README.md` | This file |
