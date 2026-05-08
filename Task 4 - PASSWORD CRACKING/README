@@ -1,0 +1,42 @@
+# Task 4: Password Cracking Lab
+
+## Overview
+This folder documents the password cracking exercises performed using access
+gained in Task 3. The /etc/shadow file was extracted from Metasploitable 2,
+password hashes were saved to Kali Linux, and John the Ripper was used to
+crack them. Cracked credentials were then validated via SSH login.
+
+---
+
+## Environment
+| Component | Details |
+|-----------|---------|
+| Attacker | Kali Linux |
+| Target | Metasploitable 2 — 192.168.56.101 |
+| Tool | John the Ripper 1.9.0-Jumbo-1 |
+| Hash Type | md5crypt ($1$) |
+| Date | 8 May 2026 |
+
+---
+
+## Prerequisites
+- Root shell access on Metasploitable 2 (obtained in Task 3)
+- John the Ripper installed on Kali
+
+```bash
+sudo apt install john
+```
+
+---
+
+## Lab Walkthrough
+
+### Step 1 — Extract hashes from /etc/shadow
+Inside the Metasploit root shell:
+```bash
+cat /etc/shadow
+```
+Copy the lines with real hash values (those containing `$1$`).
+Accounts with `*` or `!` have no password set and can be ignored.
+
+**Hashes extracted:**
