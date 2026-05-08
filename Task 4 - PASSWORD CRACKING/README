@@ -19,24 +19,5 @@ crack them. Cracked credentials were then validated via SSH login.
 
 ---
 
-## Prerequisites
-- Root shell access on Metasploitable 2 (obtained in Task 3)
-- John the Ripper installed on Kali
-
-```bash
-sudo apt install john
-```
-
----
-
-## Lab Walkthrough
-
-### Step 1 — Extract hashes from /etc/shadow
-Inside the Metasploit root shell:
-```bash
-cat /etc/shadow
-```
-Copy the lines with real hash values (those containing `$1$`).
-Accounts with `*` or `!` have no password set and can be ignored.
 
 **Hashes extracted:**
