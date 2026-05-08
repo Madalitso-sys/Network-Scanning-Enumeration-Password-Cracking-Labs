@@ -8,4 +8,13 @@ gain a root shell on the target machine.
 
 ---
 
+## Environment
+| Component | Details |
+|-----------|---------|
+| Attacker | Kali Linux — 192.168.56.102 |
+| Target | Metasploitable 2 — 192.168.56.101 |
+| Network | VirtualBox Host-Only Adapter |
+| Metasploit Version | v6.4.84-dev |
+| Date | 8 May 2026 |
 
+---
